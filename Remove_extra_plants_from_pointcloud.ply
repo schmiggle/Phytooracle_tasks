@@ -1,9 +1,7 @@
-import glob, os, sys, alphashape, pydeck, random, argparse
+import glob, os, sys, alphashape, argparse
 import pandas as pd
 import open3d as o3d
 import numpy as np
-import matplotlib.pyplot as plt
-from descartes import PolygonPatch
 
 # parsers ----------------------------------------------------------------------------------------------------------
 
