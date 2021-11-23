@@ -1,4 +1,8 @@
-import glob, os, sys, alphashape, argparse
+import os 
+import sys 
+import alphashape
+import argparse
+import glob
 import pandas as pd
 import open3d as o3d
 import numpy as np
