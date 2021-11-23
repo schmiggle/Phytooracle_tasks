@@ -4,8 +4,8 @@ WORKDIR /opt
 COPY . /opt
 
 USER root
-
-RUN apt-get update
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false update -y
 RUN apt-get install -y wget \
                        build-essential \
                        software-properties-common \
