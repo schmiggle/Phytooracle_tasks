@@ -36,4 +36,4 @@ RUN python3.9 -m pip install https://storage.googleapis.com/open3d-releases-mast
 RUN apt-get install -y locales && locale-gen en_US.UTF-8
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
 
-ENTRYPOINT [ "/usr/bin/python3", "/opt/Remove_extra_plants_from_pointcloud.py" ]
+ENTRYPOINT [ "/usr/local/bin/python3.9", "/opt/Remove_extra_plants_from_pointcloud.py" ]
