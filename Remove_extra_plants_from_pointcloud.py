@@ -1,4 +1,5 @@
-import os 
+import os
+from posixpath import basename 
 import sys 
 import alphashape
 import argparse
@@ -110,19 +111,18 @@ def get_largest_pointcloud(list_):
         if len(i) == max(len_list):
             largest_pointcloud = i
         else:
-            continue
+            pass
     return largest_pointcloud
 
-def save_plant_array_to_ply(array, path_list, i):
+def save_plant_array_to_ply(array, out_dir, out_file):
     args = get_args()
-    output_dir = args.outdir
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(array)
-    directory = os.path.join(output_dir, path_list[i][0], path_list[i][4])
-    if not os.path.isdir(directory):
-        os.makedirs(directory)
-    os.chdir(directory)
-    o3d.io.write_point_cloud(path_list[i][4] + '_' + path_list[i][5] + '.ply', pcd)
+
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
+
+    o3d.io.write_point_cloud(os.path.join(out_dir, out_file + '_clustered.ply'), pcd)
 
 # define main ----------------------------------------------------------------------------------------------------------
 
@@ -130,16 +130,13 @@ def main():
     """Make a jazz noise here"""
 
     args = get_args()
-    input_dir = args.indir
-    output_dir = args.outdir
+    plant_pcd_filepaths = glob.glob(os.path.join(args.indir, '*combined_multiway_registered_plant.ply'))
 
-    plant_pcd_filepaths = glob.glob(input_dir + '/*/combined_unregistered_plant.ply')
-
-    path_list = [generate_pointcloud_ID(i) for i in plant_pcd_filepaths]
-
-    m = 0
-    for i in range(0, len(path_list)):
-        plant_pcd = o3d.io.read_point_cloud(path_list[i][6])
+    for pcd in plant_pcd_filepaths:
+        out_dir = os.path.dirname(pcd)
+        out_file = os.path.splitext(os.path.basename(pcd))[0]
+ 
+        plant_pcd = o3d.io.read_point_cloud(pcd)
         with o3d.utility.VerbosityContextManager(
                 o3d.utility.VerbosityLevel.Debug) as cm:
             labels = np.array(
@@ -153,8 +150,7 @@ def main():
         
         if len(dbscan_list) == 1:
             array = np.delete(labeled_pcd_array, 3, 1)
-            save_plant_array_to_ply(array, path_list, i)
-            m += 1
+            save_plant_array_to_ply(array, out_dir, out_file)
             continue
             
         max_test_list = []
@@ -162,17 +158,16 @@ def main():
         for x in dbscan_list:
             if len(x) >= 0.05 * max_len:
                 max_test_list.append(x)
+
         if len(max_test_list) == 1:
             array = np.delete(np.asarray(max_test_list[0]), 3, 1)
-            save_plant_array_to_ply(array, path_list, i)
-            m += 1
+            save_plant_array_to_ply(array, out_dir, out_file)
             continue
             
         shape_list = get_shapes(max_test_list)
         overlapped_array_list, overlapped_polygon_list = overlapped_shapes(shape_list)
         largest_sub_pcd = get_largest_pointcloud(overlapped_array_list)
-        save_plant_array_to_ply(largest_sub_pcd, path_list, i)
-        m += 1
+        save_plant_array_to_ply(largest_sub_pcd, out_dir, out_file)
 
 # run main ----------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
