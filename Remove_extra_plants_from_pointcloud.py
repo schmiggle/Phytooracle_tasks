@@ -147,7 +147,7 @@ def main():
         with o3d.utility.VerbosityContextManager(
                 o3d.utility.VerbosityLevel.Debug) as cm:
             labels = np.array(
-                plant_pcd.cluster_dbscan(eps=0.07, min_points=10, print_progress=True))
+                plant_pcd.cluster_dbscan(eps=args.eps, min_points=10, print_progress=True))
         
         labeled_pcd_array = np.column_stack((np.asarray(plant_pcd.points), np.array(labels)))
         
