@@ -29,6 +29,13 @@ def get_args():
                         metavar='str',
                         type=str,
                         default='')
+
+    parser.add_argument('-e',
+                        '--eps',
+                        help='EPS value for DBSCAN clustering',
+                        metavar='eps',
+                        type=float,
+                        default=0.7)
     
     return parser.parse_args()
 
