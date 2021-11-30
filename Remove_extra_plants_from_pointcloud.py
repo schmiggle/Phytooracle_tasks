@@ -7,6 +7,8 @@ import glob
 import pandas as pd
 import open3d as o3d
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
 # parsers ----------------------------------------------------------------------------------------------------------
 
@@ -130,7 +132,46 @@ def save_plant_array_to_ply(array, out_dir, out_file):
         os.makedirs(out_dir)
 
     o3d.io.write_point_cloud(os.path.join(out_dir, out_file + '_clustered.ply'), pcd)
+    
+def generate_rotating_gif(array, gif_save_path, n_points=None, force_overwrite=False, scan_number=None):
 
+    fig = plt.figure(figsize=(9,9))
+    ax = fig.add_subplot(111, projection='3d')
+    x = array[:,0]
+    y = array[:,1]
+    z = array[:,2]
+    # c = array[:,3]
+    cmap = 'Greens'
+    ax.scatter(x, y, z,
+               zdir='z',
+               c = 'green',
+               cmap = 'Dark2_r',
+               marker='.',
+               s=1,
+    )
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.set_zticklabels([])
+    ax.grid(False)
+    ax.xaxis.pane.fill = False # Left pane
+    ax.yaxis.pane.fill = False # Right pane
+    ax.w_xaxis.line.set_color((1.0, 1.0, 1.0, 0.0))
+    ax.w_yaxis.line.set_color((1.0, 1.0, 1.0, 0.0))
+    ax.w_zaxis.line.set_color((1.0, 1.0, 1.0, 0.0))
+    # Transparent panes
+    ax.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    # No ticks
+    ax.set_xticks([]) 
+    ax.set_yticks([]) 
+    ax.set_zticks([])
+    ax.set_box_aspect([max(x)-min(x),max(y)-min(y),max(z)-min(z)])
+    def rotate(angle):
+        ax.view_init(azim=angle)
+    #rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 361, 2), interval=30)
+    rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 361, 15), interval=300)
+    #rot_animation.save('rotation.gif', dpi=80, writer='imagemagick')
+    rot_animation.save(gif_save_path, dpi=80)
 # define main ----------------------------------------------------------------------------------------------------------
 
 def main():
@@ -140,8 +181,10 @@ def main():
     plant_pcd_filepaths = glob.glob(os.path.join(args.indir, '*combined_multiway_registered_plant.ply'))
 
     for pcd in plant_pcd_filepaths:
+        
         out_dir = os.path.dirname(pcd)
         out_file = os.path.splitext(os.path.basename(pcd))[0]
+        gif_path = os.path.join(out_dir.replace('combined_pointclouds', 'plant_reports'), 'combined_multiway_registered_soil_segmentation_cluster.gif')
  
         plant_pcd = o3d.io.read_point_cloud(pcd)
         with o3d.utility.VerbosityContextManager(
@@ -158,6 +201,7 @@ def main():
         if len(dbscan_list) == 1:
             array = np.delete(labeled_pcd_array, 3, 1)
             save_plant_array_to_ply(array, out_dir, out_file)
+            generate_rotating_gif(array=array, gif_save_path=gif_path)
             continue
             
         max_test_list = []
@@ -169,12 +213,14 @@ def main():
         if len(max_test_list) == 1:
             array = np.delete(np.asarray(max_test_list[0]), 3, 1)
             save_plant_array_to_ply(array, out_dir, out_file)
+            generate_rotating_gif(array=array, gif_save_path=gif_path)
             continue
             
         shape_list = get_shapes(max_test_list)
         overlapped_array_list, overlapped_polygon_list = overlapped_shapes(shape_list)
         largest_sub_pcd = get_largest_pointcloud(overlapped_array_list)
         save_plant_array_to_ply(largest_sub_pcd, out_dir, out_file)
+        generate_rotating_gif(array=largest_sub_pcd, gif_save_path=gif_path)
 
 # run main ----------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
