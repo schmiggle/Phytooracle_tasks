@@ -1,0 +1,6 @@
+  1:
+    container: 
+      simg_name: 3d_neighbor_removal.simg
+      dockerhub_path: docker://phytooracle/3d_neighbor_removal:latest
+    command: singularity run -B $(pwd):/mnt --pwd /mnt 3d_neighbor_removal.simg -e 0.01 -po segmentation_pointclouds -fo plant_reports
+    output_dir: individual_plants_out #/segmentation_pointclouds

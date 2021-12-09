@@ -23,21 +23,36 @@ def get_args():
                         help='Input directory containing pointclouds',
                         metavar='str',
                         type=str,
-                        default='')
+                        default='.')
     
-    parser.add_argument('-o',
-                        '--outdir',
-                        help='Output directory for .ply files',
-                        metavar='str',
+    parser.add_argument('-pod',
+                        '--data_output_dir',
+                        help='Directory where science data products will be saved.',
+                        metavar='data_output_dir',
                         type=str,
-                        default='')
-
+                        default='segmentation_pointclouds')
+    
+    parser.add_argument('-fod',
+                        '--figure_output_dir',
+                        help='Directory where the dashboard figures and data will be saved.',
+                        metavar='figure_output_dir',
+                        type=str,
+                        default='plant_reports')
+    
     parser.add_argument('-e',
                         '--eps',
                         help='EPS value for DBSCAN clustering',
                         metavar='eps',
                         type=float,
-                        default=0.07)
+                        default=0.05)
+
+    parser.add_argument('-of',
+                        '--output_filename',
+                        help='Name of the output filename.',
+                        metavar='output_filename',
+                        type=str,
+                        default='final.ply')
+
     
     return parser.parse_args()
 
@@ -123,15 +138,12 @@ def get_largest_pointcloud(list_):
             pass
     return largest_pointcloud
 
-def save_plant_array_to_ply(array, out_dir, out_file):
+def save_plant_array_to_ply(array, out_file):
     args = get_args()
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(array)
 
-    if not os.path.isdir(out_dir):
-        os.makedirs(out_dir)
-
-    o3d.io.write_point_cloud(os.path.join(out_dir, out_file + '_clustered.ply'), pcd)
+    o3d.io.write_point_cloud(out_file, pcd)
     
 def generate_rotating_gif(array, gif_save_path, n_points=None, force_overwrite=False, scan_number=None):
 
@@ -172,55 +184,63 @@ def generate_rotating_gif(array, gif_save_path, n_points=None, force_overwrite=F
     rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 361, 15), interval=300)
     #rot_animation.save('rotation.gif', dpi=80, writer='imagemagick')
     rot_animation.save(gif_save_path, dpi=80)
+
+def output_dir_init(dirs):
+    for d in dirs:
+        os.makedirs(d, exist_ok=True)
+
 # define main ----------------------------------------------------------------------------------------------------------
 
 def main():
     """Make a jazz noise here"""
 
     args = get_args()
-    plant_pcd_filepaths = glob.glob(os.path.join(args.indir, '*combined_multiway_registered_plant.ply'))
 
-    for pcd in plant_pcd_filepaths:
-        
-        out_dir = os.path.dirname(pcd)
-        out_file = os.path.splitext(os.path.basename(pcd))[0]
-        gif_path = os.path.join(out_dir.replace('combined_pointclouds', 'plant_reports'), 'combined_multiway_registered_soil_segmentation_cluster.gif')
- 
-        plant_pcd = o3d.io.read_point_cloud(pcd)
-        with o3d.utility.VerbosityContextManager(
-                o3d.utility.VerbosityLevel.Debug) as cm:
-            labels = np.array(
-                plant_pcd.cluster_dbscan(eps=args.eps, min_points=10, print_progress=True))
-        
-        labeled_pcd_array = np.column_stack((np.asarray(plant_pcd.points), np.array(labels)))
-        
-        dbscan_list = []
-        for x in set(labeled_pcd_array[:,3]):
-            dbscan_list.append(labeled_pcd_array[labeled_pcd_array[:,3] == x]) 
-        
-        if len(dbscan_list) == 1:
-            array = np.delete(labeled_pcd_array, 3, 1)
-            save_plant_array_to_ply(array, out_dir, out_file)
-            generate_rotating_gif(array=array, gif_save_path=gif_path)
-            continue
-            
-        max_test_list = []
-        max_len = len(get_largest_pointcloud(dbscan_list))
-        for x in dbscan_list:
-            if len(x) >= 0.05 * max_len:
-                max_test_list.append(x)
+    output_dir_init([args.data_output_dir, args.figure_output_dir])
 
-        if len(max_test_list) == 1:
-            array = np.delete(np.asarray(max_test_list[0]), 3, 1)
-            save_plant_array_to_ply(array, out_dir, out_file)
-            generate_rotating_gif(array=array, gif_save_path=gif_path)
-            continue
-            
-        shape_list = get_shapes(max_test_list)
-        overlapped_array_list, overlapped_polygon_list = overlapped_shapes(shape_list)
-        largest_sub_pcd = get_largest_pointcloud(overlapped_array_list)
-        save_plant_array_to_ply(largest_sub_pcd, out_dir, out_file)
-        generate_rotating_gif(array=largest_sub_pcd, gif_save_path=gif_path)
+    pcd_path = os.path.join(args.data_output_dir, "segmentation_plant.ply")
+
+    out_file = os.path.join(args.data_output_dir, args.output_filename)
+    gif_path = os.path.join(args.figure_output_dir, 'combined_multiway_registered_soil_segmentation_cluster.gif')
+
+    print(f"Reading in pointcloud ({pcd_path})...")
+    plant_pcd = o3d.io.read_point_cloud(pcd_path)
+    print(f"    ... found: {plant_pcd}")
+
+    with o3d.utility.VerbosityContextManager(
+            o3d.utility.VerbosityLevel.Debug) as cm:
+        labels = np.array(
+            plant_pcd.cluster_dbscan(eps=args.eps, min_points=10, print_progress=True))
+    
+    labeled_pcd_array = np.column_stack((np.asarray(plant_pcd.points), np.array(labels)))
+    
+    dbscan_list = []
+    for x in set(labeled_pcd_array[:,3]):
+        dbscan_list.append(labeled_pcd_array[labeled_pcd_array[:,3] == x]) 
+    
+    if len(dbscan_list) == 1:
+        array = np.delete(labeled_pcd_array, 3, 1)
+        save_plant_array_to_ply(array, out_file)
+        generate_rotating_gif(array=array, gif_save_path=gif_path)
+        return
+        
+    max_test_list = []
+    max_len = len(get_largest_pointcloud(dbscan_list))
+    for x in dbscan_list:
+        if len(x) >= 0.05 * max_len:
+            max_test_list.append(x)
+
+    if len(max_test_list) == 1:
+        array = np.delete(np.asarray(max_test_list[0]), 3, 1)
+        save_plant_array_to_ply(array, out_file)
+        generate_rotating_gif(array=array, gif_save_path=gif_path)
+        return
+        
+    shape_list = get_shapes(max_test_list)
+    overlapped_array_list, overlapped_polygon_list = overlapped_shapes(shape_list)
+    largest_sub_pcd = get_largest_pointcloud(overlapped_array_list)
+    save_plant_array_to_ply(largest_sub_pcd, out_file)
+    generate_rotating_gif(array=largest_sub_pcd, gif_save_path=gif_path)
 
 # run main ----------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
