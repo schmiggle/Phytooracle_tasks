@@ -20,10 +20,11 @@ def get_args():
 
     parser.add_argument('-plant',
                         '--plant_name',
-                        help='Input directory containing pointclouds',
+                        help='Plant name',
                         metavar='str',
                         type=str,
-                        default='.')
+                        required=True
+    )
     
     parser.add_argument('-pod',
                         '--data_output_dir',
