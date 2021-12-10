@@ -18,7 +18,7 @@ def get_args():
         description='Rock the Casbah',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('-p',
+    parser.add_argument('-plant',
                         '--plant_name',
                         help='Input directory containing pointclouds',
                         metavar='str',
