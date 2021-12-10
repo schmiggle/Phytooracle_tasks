@@ -18,8 +18,8 @@ def get_args():
         description='Rock the Casbah',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('-i',
-                        '--indir',
+    parser.add_argument('-p',
+                        '--plant_name',
                         help='Input directory containing pointclouds',
                         metavar='str',
                         type=str,
@@ -196,12 +196,17 @@ def main():
 
     args = get_args()
 
-    output_dir_init([args.data_output_dir, args.figure_output_dir])
+    plant_name = args.plant_name
 
-    pcd_path = os.path.join(args.data_output_dir, "segmentation_plant.ply")
+    data_output_dir = os.path.join(args.data_output_dir, plant_name)
+    figure_output_dir = os.path.join(args.figure_output_dir, plant_name)
 
-    out_file = os.path.join(args.data_output_dir, args.output_filename)
-    gif_path = os.path.join(args.figure_output_dir, 'combined_multiway_registered_soil_segmentation_cluster.gif')
+    output_dir_init([data_output_dir, figure_output_dir])
+
+    pcd_path = os.path.join(data_output_dir, "segmentation_plant.ply")
+
+    out_file = os.path.join(data_output_dir, args.output_filename)
+    gif_path = os.path.join(figure_output_dir, 'combined_multiway_registered_soil_segmentation_cluster.gif')
 
     print(f"Reading in pointcloud ({pcd_path})...")
     plant_pcd = o3d.io.read_point_cloud(pcd_path)
