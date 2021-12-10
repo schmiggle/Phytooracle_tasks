@@ -1,5 +1,7 @@
 # 3d_neighbor_removal
 
+[Docker Link](https://hub.docker.com/repository/docker/phytooracle/3d_neighbor_removal)
+
 # Remove_extra_plants_from_pointcloud
 
 Some pointclouds include parts of multiple plants in them. This code removes
