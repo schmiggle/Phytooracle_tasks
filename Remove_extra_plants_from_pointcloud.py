@@ -207,7 +207,7 @@ def main():
     pcd_path = os.path.join(data_output_dir, "segmentation_plant.ply")
 
     out_file = os.path.join(data_output_dir, args.output_filename)
-    gif_path = os.path.join(figure_output_dir, 'combined_multiway_registered_soil_segmentation_cluster.gif')
+    gif_path = os.path.join(figure_output_dir, args.output_filename.replace(".ply", ".gif"))
 
     print(f"Reading in pointcloud ({pcd_path})...")
     plant_pcd = o3d.io.read_point_cloud(pcd_path)
